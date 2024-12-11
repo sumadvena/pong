@@ -32,17 +32,15 @@ class Screen:
         self.player_left.draw(self.display)
         self.player_right.draw(self.display)
         self.ball.draw(self.display)
-        self.detect_collision()
+        self.detect_ball_collision()
         self.detect_win()
 
-    def detect_collision(self):
+    def detect_ball_collision(self):
         """
         Hitbox:
             0: start_x, 1: end_x,
             2: start_y, 3: end_y
         """
-        print(self.player_left.paddle.hitbox)
-        print(self.ball.hitbox)
         # wall collison
         if self.ball.hitbox[2] <= 1 or self.ball.hitbox[3] >= HEIGHT - 1:
             self.ball.velocity_y = -self.ball.velocity_y
@@ -52,11 +50,11 @@ class Screen:
         if (
             self.ball.hitbox[2] >= self.player_left.paddle.hitbox[2]
             and self.ball.hitbox[3] <= self.player_left.paddle.hitbox[3]
-            and self.ball.hitbox[0] == self.player_left.paddle.hitbox[1]
+            and self.ball.hitbox[1] == self.player_left.paddle.hitbox[1]
         ):
             bounce_angle = self.bounce_angle()
             self.ball.velocity_x = int(self.ball.speed * math.cos(bounce_angle))
-            self.ball.velocity_y = int(self.ball.speed * math.sin(bounce_angle))
+            self.ball.velocity_y = int(self.ball.speed * -math.sin(bounce_angle))
 
         if (
             self.ball.hitbox[2] >= self.player_right.paddle.hitbox[2]
@@ -67,14 +65,13 @@ class Screen:
             self.ball.velocity_x = -int(self.ball.speed * math.cos(bounce_angle))
             self.ball.velocity_y = int(self.ball.speed * -math.sin(bounce_angle))
 
-        print(self.ball.velocity_x)
-
     def bounce_angle(self):
+        # which player - doesn't matter
         relative_landing_point = (
             self.player_right.paddle.hitbox[2] + self.player_right.paddle.size_y / 2
         ) - self.ball.hitbox[2]
         normalized_rlp = relative_landing_point / (self.player_right.paddle.size_y / 2)
-        return normalized_rlp * (5 * 3.14) / 12
+        return normalized_rlp * 1.04719755  # 60 degrees in radians
 
     def detect_win(self):
         if self.ball.position_x <= 0:
@@ -85,6 +82,4 @@ class Screen:
             self.reset()
 
     def reset(self):
-        self.player_left.reset()
-        self.player_right.reset()
         self.ball = Ball()
