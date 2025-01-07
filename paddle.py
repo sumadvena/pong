@@ -7,8 +7,8 @@ class Paddle(Game_Object):
         self.y_axis = y_axis
         self.position_y = 26
         self.velocity = 0
-        self.size_x = 2
-        self.size_y = 15
+        self.size_x = 3
+        self.size_y = 16
 
     def calculate_velocity(self):
         y_value = self.y_axis.read_u16()
@@ -39,8 +39,5 @@ class Paddle(Game_Object):
 
     def move(self):
         self.velocity = self.calculate_velocity()
-        if (
-            self.hitbox[3] - self.velocity >= 6
-            and self.hitbox[2] - self.velocity <= 120
-        ):
+        if self.hitbox[2] + self.velocity >= 0 and self.hitbox[3] + self.velocity <= 63:
             self.position_y += self.velocity

@@ -47,31 +47,53 @@ class Screen:
 
         # paddle collision
 
+        print(self.player_left.paddle.hitbox)
+        print(self.ball.hitbox)
+        # print(self.player_right.paddle.hitbox)
         if (
             self.ball.hitbox[2] >= self.player_left.paddle.hitbox[2]
             and self.ball.hitbox[3] <= self.player_left.paddle.hitbox[3]
-            and self.ball.hitbox[1] == self.player_left.paddle.hitbox[1]
+            and self.ball.hitbox[1] + self.ball.velocity_x
+            <= self.player_left.paddle.hitbox[1]
+            and self.ball.hitbox[0] >= self.player_left.paddle.hitbox[0]
         ):
             bounce_angle = self.bounce_angle()
-            self.ball.velocity_x = int(self.ball.speed * math.cos(bounce_angle))
-            self.ball.velocity_y = int(self.ball.speed * -math.sin(bounce_angle))
+            print(
+                f"HIT----------------------------------- {self.ball.hitbox} --- v {self.ball.velocity_x}"
+            )
+            # self.ball.velocity_x = int(self.ball.speed * math.cos(bounce_angle))
+            # self.ball.velocity_y = int(self.ball.speed * -math.sin(bounce_angle))
+            self.ball.velocity_y = int(math.sqrt(1 - bounce_angle**2) * self.ball.speed)
+            self.ball.velocity_x = int(bounce_angle * self.ball.speed)
 
         if (
             self.ball.hitbox[2] >= self.player_right.paddle.hitbox[2]
             and self.ball.hitbox[3] <= self.player_right.paddle.hitbox[3]
-            and self.ball.hitbox[1] == self.player_right.paddle.hitbox[0]
+            and self.ball.hitbox[1] >= self.player_right.paddle.hitbox[0]
+            and self.ball.hitbox[0] + self.ball.velocity_x
+            <= self.player_right.paddle.hitbox[1]
         ):
             bounce_angle = self.bounce_angle()
-            self.ball.velocity_x = -int(self.ball.speed * math.cos(bounce_angle))
-            self.ball.velocity_y = int(self.ball.speed * -math.sin(bounce_angle))
+            print(f"HIT----------------------------------- {self.ball.hitbox}")
+            # self.ball.velocity_x = -int(self.ball.speed * math.cos(bounce_angle))
+            # self.ball.velocity_y = int(self.ball.speed * -math.sin(bounce_angle))
+            self.ball.velocity_y = int(
+                -math.sqrt(1 - bounce_angle**2) * self.ball.speed
+            )
+            self.ball.velocity_x = int(-bounce_angle * self.ball.speed)
 
     def bounce_angle(self):
+        threshold = 0.9
         # which player - doesn't matter
         relative_landing_point = (
             self.player_right.paddle.hitbox[2] + self.player_right.paddle.size_y / 2
         ) - self.ball.hitbox[2]
         normalized_rlp = relative_landing_point / (self.player_right.paddle.size_y / 2)
-        return normalized_rlp * 1.04719755  # 60 degrees in radians
+        if normalized_rlp > threshold:
+            normalized_rlp = threshold
+        elif normalized_rlp < -threshold:
+            normalized_rlp = -threshold
+        return normalized_rlp  # * 0.5235988  # 30 degrees in radians
 
     def detect_win(self):
         if self.ball.position_x <= 0:

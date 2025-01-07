@@ -7,7 +7,7 @@ class Player:
         self.left = left
 
         if self.left:
-            self.paddle.position_x = 4
+            self.paddle.position_x = 5
         else:
             self.paddle.position_x = 122
 
