@@ -11,5 +11,5 @@ screen = Screen(
 
 
 while True:
-    screen.ball.move()
     screen.handle_screen()
+    screen.ball.move()

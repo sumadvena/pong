@@ -1,6 +1,7 @@
 from machine import I2C
 from sh1106 import SH1106_I2C
 from ball import Ball
+from player import Player
 import math
 
 # parameters for used oled display
@@ -9,7 +10,7 @@ HEIGHT = 64
 
 
 class Screen:
-    def __init__(self, player_left, player_right):
+    def __init__(self, player_left: Player, player_right: Player):
         self.display = self.connection_init()
         self.player_left = player_left
         self.player_right = player_right
@@ -29,11 +30,11 @@ class Screen:
         self.display.show()
 
     def draw_objects(self):
+        self.detect_ball_collision()
+        self.detect_win()
         self.player_left.draw(self.display)
         self.player_right.draw(self.display)
         self.ball.draw(self.display)
-        self.detect_ball_collision()
-        self.detect_win()
 
     def detect_ball_collision(self):
         """
