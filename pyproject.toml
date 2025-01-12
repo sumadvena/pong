@@ -1,0 +1,12 @@
+[project]
+name = "pong"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "adafruit-ampy>=1.1.0",
+    "micropython-rp2-stubs==1.22.1.post2",
+    "rshell>=0.0.36",
+    "ruff>=0.9.0",
+]

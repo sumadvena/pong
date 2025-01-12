@@ -51,6 +51,7 @@ class Screen:
         print(self.player_left.paddle.hitbox)
         print(self.ball.hitbox)
         # print(self.player_right.paddle.hitbox)
+        # LEFT PLAYER
         if (
             self.ball.hitbox[2] >= self.player_left.paddle.hitbox[2]
             and self.ball.hitbox[3] <= self.player_left.paddle.hitbox[3]
@@ -66,6 +67,7 @@ class Screen:
             # self.ball.velocity_y = int(self.ball.speed * -math.sin(bounce_angle))
             self.ball.velocity_y = int(math.sqrt(1 - bounce_angle**2) * self.ball.speed)
             self.ball.velocity_x = int(bounce_angle * self.ball.speed)
+            self.ball.hitbox[0] = self.player_left.paddle.hitbox[1]
 
         if (
             self.ball.hitbox[2] >= self.player_right.paddle.hitbox[2]
@@ -82,6 +84,7 @@ class Screen:
                 -math.sqrt(1 - bounce_angle**2) * self.ball.speed
             )
             self.ball.velocity_x = int(-bounce_angle * self.ball.speed)
+            self.ball.hitbox[1] = self.player_left.paddle.hitbox[0] - 1
 
     def bounce_angle(self):
         threshold = 0.9
