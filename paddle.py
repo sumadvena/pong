@@ -8,7 +8,7 @@ class Paddle(Game_Object):
         self.position_y = 26
         self.velocity = 0
         self.size_x = 3
-        self.size_y = 16
+        self.size_y = 18
 
     def calculate_velocity(self):
         y_value = self.y_axis.read_u16()
@@ -27,17 +27,14 @@ class Paddle(Game_Object):
         else:
             return 0
 
-    # def within_the_border(self):
-    #     """
-    #     Screen resolution is 128 x 64
-    #     if the paddle is to high or to low -> return false
-    #     """
-    #     if self.hitbox[2] <= 0 or self.hitbox[3] >= 127:
-    #         return False
-    #     else:
-    #         return True
-
     def move(self):
         self.velocity = self.calculate_velocity()
-        if self.hitbox[2] + self.velocity >= 0 and self.hitbox[3] + self.velocity <= 63:
-            self.position_y += self.velocity
+        new_y = self.position_y + self.velocity
+        # Clamp the new Y position so the paddle stays fully on-screen
+        if new_y < 0:
+            new_y = 0
+        if new_y + self.size_y > 64:
+            new_y = 64 - self.size_y
+
+        # Assign the safe, clamped position
+        self.position_y = new_y

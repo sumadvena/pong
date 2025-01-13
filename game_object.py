@@ -8,8 +8,8 @@ class Game_Object:
         self.calc_hitbox()
 
     def draw(self, display):
-        display.fill_rect(self.position_x, self.position_y, self.size_x, self.size_y, 1)
         self.calc_hitbox()
+        display.fill_rect(self.position_x, self.position_y, self.size_x, self.size_y, 1)
 
     def calc_hitbox(self):
         self.hitbox[0] = self.position_x

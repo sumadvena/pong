@@ -1,111 +1,124 @@
-from machine import I2C
+from machine import I2C, Pin
 from sh1106 import SH1106_I2C
 from ball import Ball
 from player import Player
+from paddle import Paddle
 import math
+import time
 
-# parameters for used oled display
 WIDTH = 128
 HEIGHT = 64
 
 
 class Screen:
-    def __init__(self, player_left: Player, player_right: Player):
-        self.display = self.connection_init()
+    def __init__(self, display: SH1106_I2C, player_left: Player, player_right: Player):
+        self.display = display
         self.player_left = player_left
+        self.ball_reset()
         self.player_right = player_right
-        self.ball = Ball()
-        self.score = [0] * 2
+        self.buzz = Pin(2, Pin.OUT)
 
-    def connection_init(self):
-        i2c = I2C(0, freq=400000)
-        print("I2C Address: " + hex(i2c.scan()[0]).upper())  # Display device address
-        print("I2C Configuration: " + str(i2c))  # Display I2C config
-        return SH1106_I2C(WIDTH, HEIGHT, i2c)
+    def ball_reset(self):
+        self.ball = Ball()
+        if self.player_left.is_bot:
+            self.player_left.ball = self.ball
 
     def handle_screen(self):
         self.display.fill(0)
-        self.display.text(f"{self.score[0]}:{self.score[1]}", 50, 5)
+        self.display.text(f"{self.player_left.score}:{self.player_right.score}", 50, 5)
         self.draw_objects()
         self.display.show()
 
     def draw_objects(self):
-        self.detect_ball_collision()
-        self.detect_win()
         self.player_left.draw(self.display)
         self.player_right.draw(self.display)
         self.ball.draw(self.display)
+        self.detect_ball_collision()
+
+    def tick(self):
+        self.buzz.on()
+        time.sleep_us(1000)
+        self.buzz.off()
 
     def detect_ball_collision(self):
-        """
-        Hitbox:
-            0: start_x, 1: end_x,
-            2: start_y, 3: end_y
-        """
-        # wall collison
-        if self.ball.hitbox[2] <= 1 or self.ball.hitbox[3] >= HEIGHT - 1:
+        """Handle collisions with walls and paddles using AABB checks."""
+        # Wall collision (top/bottom)
+        if self.ball.hitbox[2] <= 0 or self.ball.hitbox[3] >= HEIGHT:
             self.ball.velocity_y = -self.ball.velocity_y
 
-        # paddle collision
+        # Paddle collision: left paddle
+        if self.check_collision(self.ball.hitbox, self.player_left.paddle.hitbox):
+            self.handle_paddle_bounce(self.player_left.paddle, is_left=True)
+            self.tick()
 
-        print(self.player_left.paddle.hitbox)
-        print(self.ball.hitbox)
-        # print(self.player_right.paddle.hitbox)
-        # LEFT PLAYER
-        if (
-            self.ball.hitbox[2] >= self.player_left.paddle.hitbox[2]
-            and self.ball.hitbox[3] <= self.player_left.paddle.hitbox[3]
-            and self.ball.hitbox[1] + self.ball.velocity_x
-            <= self.player_left.paddle.hitbox[1]
-            and self.ball.hitbox[0] >= self.player_left.paddle.hitbox[0]
-        ):
-            bounce_angle = self.bounce_angle()
-            print(
-                f"HIT----------------------------------- {self.ball.hitbox} --- v {self.ball.velocity_x}"
+        # Paddle collision: right paddle
+        if self.check_collision(self.ball.hitbox, self.player_right.paddle.hitbox):
+            self.handle_paddle_bounce(self.player_right.paddle, is_left=False)
+            self.tick()
+
+    def check_collision(self, box_a, box_b):
+        # box = [left, right, top, bottom]
+        return (
+            box_a[0] < box_b[1]  # ball.left < paddle.right
+            and box_a[1] > box_b[0]  # ball.right > paddle.left
+            and box_a[2] < box_b[3]  # ball.top < paddle.bottom
+            and box_a[3] > box_b[2]  # ball.bottom > paddle.top
+        )
+
+    def handle_paddle_bounce(self, paddle: Paddle, is_left):
+        bounce_angle = self.compute_bounce_angle(paddle)
+
+        if bounce_angle < 0.75:
+            bounce_angle = 0.75 if bounce_angle >= 0 else -0.75
+
+        y_factor = math.sqrt(max(0.0, 1.0 - bounce_angle**2))
+        if is_left:
+            self.ball.velocity_x = int(abs(bounce_angle) * self.ball.speed)
+            self.ball.velocity_y = (
+                int(y_factor * self.ball.speed)
+                if self.ball.velocity_y >= 0
+                else int(-y_factor * self.ball.speed)
             )
-            # self.ball.velocity_x = int(self.ball.speed * math.cos(bounce_angle))
-            # self.ball.velocity_y = int(self.ball.speed * -math.sin(bounce_angle))
-            self.ball.velocity_y = int(math.sqrt(1 - bounce_angle**2) * self.ball.speed)
-            self.ball.velocity_x = int(bounce_angle * self.ball.speed)
-            self.ball.hitbox[0] = self.player_left.paddle.hitbox[1]
-
-        if (
-            self.ball.hitbox[2] >= self.player_right.paddle.hitbox[2]
-            and self.ball.hitbox[3] <= self.player_right.paddle.hitbox[3]
-            and self.ball.hitbox[1] >= self.player_right.paddle.hitbox[0]
-            and self.ball.hitbox[0] + self.ball.velocity_x
-            <= self.player_right.paddle.hitbox[1]
-        ):
-            bounce_angle = self.bounce_angle()
-            print(f"HIT----------------------------------- {self.ball.hitbox}")
-            # self.ball.velocity_x = -int(self.ball.speed * math.cos(bounce_angle))
-            # self.ball.velocity_y = int(self.ball.speed * -math.sin(bounce_angle))
-            self.ball.velocity_y = int(
-                -math.sqrt(1 - bounce_angle**2) * self.ball.speed
+            self.ball.position_x = paddle.hitbox[1]
+        else:
+            self.ball.velocity_x = int(-abs(bounce_angle) * self.ball.speed)
+            self.ball.velocity_y = (
+                int(y_factor * self.ball.speed)
+                if self.ball.velocity_y >= 0
+                else int(-y_factor * self.ball.speed)
             )
-            self.ball.velocity_x = int(-bounce_angle * self.ball.speed)
-            self.ball.hitbox[1] = self.player_left.paddle.hitbox[0] - 1
+            self.ball.position_x = paddle.hitbox[0] - (
+                self.ball.hitbox[1] - self.ball.hitbox[0]
+            )
 
-    def bounce_angle(self):
-        threshold = 0.9
-        # which player - doesn't matter
-        relative_landing_point = (
-            self.player_right.paddle.hitbox[2] + self.player_right.paddle.size_y / 2
-        ) - self.ball.hitbox[2]
-        normalized_rlp = relative_landing_point / (self.player_right.paddle.size_y / 2)
-        if normalized_rlp > threshold:
-            normalized_rlp = threshold
-        elif normalized_rlp < -threshold:
-            normalized_rlp = -threshold
-        return normalized_rlp  # * 0.5235988  # 30 degrees in radians
+    def compute_bounce_angle(self, paddle: Paddle):
+        paddle_center_y = (paddle.hitbox[2] + paddle.hitbox[3]) / 2.0
+        ball_center_y = (self.ball.hitbox[2] + self.ball.hitbox[3]) / 2.0
+        relative_intersect_y = ball_center_y - paddle_center_y
+
+        normalized = relative_intersect_y / paddle.size_x / 2
+
+        if normalized < -0.95:
+            normalized = -0.95
+        elif normalized > 0.95:
+            normalized = 0.95
+
+        return normalized
 
     def detect_win(self):
+        """Check if the ball has gone beyond left or right edges; if so, update the score."""
         if self.ball.position_x <= 0:
-            self.score[1] += 1
-            self.reset()
-        if self.ball.position_x >= WIDTH:
-            self.score[0] += 1
-            self.reset()
+            self.player_right.score += 1
+            return True
+        if self.ball.position_x >= WIDTH - (self.ball.hitbox[1] - self.ball.hitbox[0]):
+            self.player_left.score += 1
+            return True
 
     def reset(self):
-        self.ball = Ball()
+        self.ball_reset()
+        self.display.fill(0)
+        self.display.text(f"{self.player_left.score}:{self.player_right.score}", 50, 30)
+        self.display.show()
+        time.sleep_ms(500)
+        self.display.fill(0)
+        self.display.show()
