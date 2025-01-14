@@ -1,4 +1,4 @@
-from machine import I2C, Pin
+from machine import Pin
 from sh1106 import SH1106_I2C
 from ball import Ball
 from player import Player
@@ -68,8 +68,8 @@ class Screen:
     def handle_paddle_bounce(self, paddle: Paddle, is_left):
         bounce_angle = self.compute_bounce_angle(paddle)
 
-        if bounce_angle < 0.75:
-            bounce_angle = 0.75 if bounce_angle >= 0 else -0.75
+        if bounce_angle < 0.8:
+            bounce_angle = 0.8 if bounce_angle >= 0 else -0.8
 
         y_factor = math.sqrt(max(0.0, 1.0 - bounce_angle**2))
         if is_left:
@@ -105,7 +105,7 @@ class Screen:
 
         return normalized
 
-    def detect_win(self):
+    def detect_score(self):
         if self.ball.position_x <= 0:
             self.player_right.score += 1
             return True
@@ -116,9 +116,9 @@ class Screen:
     def win_message(self, left_won=1):
         self.display.fill(0)
         if left_won:
-            self.display.text("Left player has won!", 50, 30)
+            self.display.text("Left won!", 30, 30)
         else:
-            self.display.text("Right player has won!", 50, 30)
+            self.display.text("Right won!", 27, 30)
         self.display.show()
         time.sleep(1)
         self.display.fill(0)
@@ -129,6 +129,6 @@ class Screen:
         self.display.fill(0)
         self.display.text(f"{self.player_left.score}:{self.player_right.score}", 50, 30)
         self.display.show()
-        time.sleep_ms(500)
+        time.sleep_ms(400)
         self.display.fill(0)
         self.display.show()

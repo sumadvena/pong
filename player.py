@@ -22,7 +22,7 @@ class Player:
         self.paddle.draw(display)
 
     def bot_move(self):
-        follow_speed = 3
+        follow_speed = 2
         # 'dead_zone' is how close the paddle center can get to ball center before bot stops moving
         dead_zone = 3
         ball_center_y = (self.ball.hitbox[2] + self.ball.hitbox[3]) // 2

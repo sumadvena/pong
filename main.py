@@ -10,31 +10,21 @@ i2c = I2C(0, freq=400000)
 display = SH1106_I2C(128, 64, i2c)
 
 
-# nwm czy potrzebne wgl
-# def exit_to_menu():
-#     """
-#     Sets a flag (or performs an action) that breaks out of the main
-#     game loop so the user can return to the menu.
-#     """
-#     global in_game
-#     in_game = False
-
-
 def main_loop(screen: Screen):
     in_game = True
 
     while in_game:
         screen.handle_screen()
         screen.ball.move()
-        if screen.detect_win():
+        if screen.detect_score():
             if screen.player_left.score == 10:
                 screen.win_message(left_won=1)
+                in_game = False
             elif screen.player_right.score == 10:
                 screen.win_message(left_won=0)
+                in_game = False
             else:
                 screen.reset()
-            in_game = False
-            # exit_to_menu()
 
     run_menu()
 
