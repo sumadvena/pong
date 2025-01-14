@@ -22,28 +22,17 @@ class Player:
         self.paddle.draw(display)
 
     def bot_move(self):
-        """
-        Automatically move the paddle's position to track the ball's Y center.
-        We add a small 'dead zone' to avoid jitter and a speed limit.
-        """
-        # Lower follow_speed to move gradually rather than jumping
         follow_speed = 3
-
         # 'dead_zone' is how close the paddle center can get to ball center before bot stops moving
-        dead_zone = 2
-
+        dead_zone = 3
         ball_center_y = (self.ball.hitbox[2] + self.ball.hitbox[3]) // 2
         paddle_center_y = (self.paddle.hitbox[2] + self.paddle.hitbox[3]) // 2
-
         difference = ball_center_y - paddle_center_y
-
         # Only move if the difference is outside the dead zone
         if abs(difference) > dead_zone:
-            # Move up or down by 'follow_speed'
             step = follow_speed if difference > 0 else -follow_speed
             self.paddle.position_y += step
 
-        # Clamp so the bot doesn't move off-screen
         if self.paddle.position_y < 0:
             self.paddle.position_y = 0
         if self.paddle.position_y + self.paddle.size_y > 64:

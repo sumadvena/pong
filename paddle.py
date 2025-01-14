@@ -10,7 +10,7 @@ class Paddle(Game_Object):
         self.size_x = 3
         self.size_y = 18
 
-    def calculate_velocity(self):
+    def get_velocity(self):
         y_value = self.y_axis.read_u16()
         if y_value < 25000:
             if y_value < 10000:
@@ -28,7 +28,7 @@ class Paddle(Game_Object):
             return 0
 
     def move(self):
-        self.velocity = self.calculate_velocity()
+        self.velocity = self.get_velocity()
         new_y = self.position_y + self.velocity
         # Clamp the new Y position so the paddle stays fully on-screen
         if new_y < 0:

@@ -16,7 +16,7 @@ class Screen:
         self.player_left = player_left
         self.ball_reset()
         self.player_right = player_right
-        self.buzz = Pin(2, Pin.OUT)
+        self.buzzer = Pin(2, Pin.OUT)
 
     def ball_reset(self):
         self.ball = Ball()
@@ -36,9 +36,9 @@ class Screen:
         self.detect_ball_collision()
 
     def tick(self):
-        self.buzz.on()
+        self.buzzer.on()
         time.sleep_us(1000)
-        self.buzz.off()
+        self.buzzer.off()
 
     def detect_ball_collision(self):
         """Handle collisions with walls and paddles using AABB checks."""
@@ -47,22 +47,22 @@ class Screen:
             self.ball.velocity_y = -self.ball.velocity_y
 
         # Paddle collision: left paddle
-        if self.check_collision(self.ball.hitbox, self.player_left.paddle.hitbox):
+        if self.check_collision(self.player_left.paddle.hitbox):
             self.handle_paddle_bounce(self.player_left.paddle, is_left=True)
             self.tick()
 
         # Paddle collision: right paddle
-        if self.check_collision(self.ball.hitbox, self.player_right.paddle.hitbox):
+        if self.check_collision(self.player_right.paddle.hitbox):
             self.handle_paddle_bounce(self.player_right.paddle, is_left=False)
             self.tick()
 
-    def check_collision(self, box_a, box_b):
-        # box = [left, right, top, bottom]
+    def check_collision(self, checked_paddle_hitbox):
+        # hitbox = [left, right, top, bottom]
         return (
-            box_a[0] < box_b[1]  # ball.left < paddle.right
-            and box_a[1] > box_b[0]  # ball.right > paddle.left
-            and box_a[2] < box_b[3]  # ball.top < paddle.bottom
-            and box_a[3] > box_b[2]  # ball.bottom > paddle.top
+            self.ball.hitbox[0] < checked_paddle_hitbox[1]
+            and self.ball.hitbox[1] > checked_paddle_hitbox[0]
+            and self.ball.hitbox[2] < checked_paddle_hitbox[3]
+            and self.ball.hitbox[3] > checked_paddle_hitbox[2]
         )
 
     def handle_paddle_bounce(self, paddle: Paddle, is_left):
@@ -106,13 +106,23 @@ class Screen:
         return normalized
 
     def detect_win(self):
-        """Check if the ball has gone beyond left or right edges; if so, update the score."""
         if self.ball.position_x <= 0:
             self.player_right.score += 1
             return True
         if self.ball.position_x >= WIDTH - (self.ball.hitbox[1] - self.ball.hitbox[0]):
             self.player_left.score += 1
             return True
+
+    def win_message(self, left_won=1):
+        self.display.fill(0)
+        if left_won:
+            self.display.text("Left player has won!", 50, 30)
+        else:
+            self.display.text("Right player has won!", 50, 30)
+        self.display.show()
+        time.sleep(1)
+        self.display.fill(0)
+        self.display.show()
 
     def reset(self):
         self.ball_reset()
